@@ -54,7 +54,26 @@ struct audio_object
 
 #if defined(_WIN32) || defined(_WIN64)
 
+#ifndef HAVE_FAUDIO_H
+
 #include <windows.h>
+
+#else
+
+// Replace XAudio2 with FAudio.
+//
+// The `<windows.h>` header cannot be replaced completely
+// because pcaudiolib uses some Windows API functions
+// (COM library memory management and `FormatMessageA`)
+// and macros to use those APIs.
+// This is a workaround to reclaim an identifier that FAudio uses.
+#define WAVEFORMATEX WRAP_25a04e52_WAVEFORMATEX
+#include <windows.h>
+#undef WAVEFORMATEX
+struct FAudioWaveFormatEx;
+typedef struct FAudioWaveFormatEx WAVEFORMATEX;
+
+#endif
 
 #define container_of(ptr, type, member) ((type *)( (char *)ptr - offsetof(type,member) ))
 

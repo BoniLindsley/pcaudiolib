@@ -21,7 +21,18 @@
 #include "config.h"
 #include "audio_priv.h"
 
+#ifndef HAVE_FAUDIO_H
+
 #include <mmreg.h>
+
+#else
+
+#include <FAudio.h>
+#define WAVE_FORMAT_IEEE_FLOAT FAUDIO_FORMAT_IEEE_FLOAT
+#define WAVE_FORMAT_ALAW 0x6
+#define WAVE_FORMAT_MULAW 0x7
+
+#endif
 
 LPWSTR
 str2wcs(const char *str)

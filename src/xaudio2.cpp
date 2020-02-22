@@ -21,9 +21,27 @@
 #include "config.h"
 #include "audio_priv.h"
 
+#ifndef HAVE_FAUDIO_H
+
 // NOTE: XAudio2.h fails to build with a C compiler
 #include <XAudio2.h>
 #pragma comment(lib, "xaudio2.lib")
+
+#else
+
+#include <FAudio.h>
+
+// Wrappers for XAudio2 interfaces
+// to minimize changes in implementation code.
+
+typedef FAudio IXAudio2;
+typedef FAudioMasteringVoice IXAudio2MasteringVoice;
+typedef FAudioSourceVoice IXAudio2SourceVoice;
+typedef FAudioVoiceState XAUDIO2_VOICE_STATE;
+typedef FAudioBuffer XAUDIO2_BUFFER;
+#define WAVE_FORMAT_IEEE_FLOAT FAUDIO_FORMAT_IEEE_FLOAT
+
+#endif
 
 struct xaudio2_object
 {
@@ -51,7 +69,12 @@ xaudio2_object_open(struct audio_object *object,
 		return HRESULT_FROM_WIN32(ERROR_ALREADY_INITIALIZED);
 
 	HRESULT hr;
+#	ifndef HAVE_FAUDIO_H
 	hr = self->audio->CreateMasteringVoice(&self->mastering);
+#	else
+	hr = FAudio_CreateMasteringVoice(self->audio, &self->mastering,
+		FAUDIO_DEFAULT_CHANNELS, FAUDIO_DEFAULT_SAMPLERATE, 0u, 0u, nullptr);
+#	endif
 	if (FAILED(hr))
 		goto error;
 
@@ -59,7 +82,12 @@ xaudio2_object_open(struct audio_object *object,
 	if (FAILED(hr))
 		goto error;
 
+#	ifndef HAVE_FAUDIO_H
  	hr = self->audio->CreateSourceVoice(&self->source, self->format);
+#	else
+	hr = FAudio_CreateSourceVoice(self->audio, &self->source, self->format,
+		0u, FAUDIO_DEFAULT_FREQ_RATIO, nullptr, nullptr, nullptr);
+#	endif
 	if (FAILED(hr))
 		goto error;
 
@@ -76,7 +104,11 @@ xaudio2_object_close(struct audio_object *object)
 
 	if (self->source != NULL)
 	{
+#		ifndef HAVE_FAUDIO_H
 		self->source->DestroyVoice();
+#		else
+		FAudioVoice_DestroyVoice(self->source);
+#		endif
 		self->source = NULL;
 	}
 
@@ -88,7 +120,11 @@ xaudio2_object_close(struct audio_object *object)
 
 	if (self->mastering != NULL)
 	{
+#		ifndef HAVE_FAUDIO_H
 		self->mastering->DestroyVoice();
+#		else
+		FAudioVoice_DestroyVoice(self->mastering);
+#		endif
 		self->mastering = NULL;
 	}
 }
@@ -98,7 +134,11 @@ xaudio2_object_destroy(struct audio_object *object)
 {
 	struct xaudio2_object *self = to_xaudio2_object(object);
 
+#	ifndef HAVE_FAUDIO_H
 	self->audio->Release();
+#	else
+	FAudio_Release(self->audio);
+#	endif
 	free(self->devicename);
 	free(self);
 
@@ -134,17 +174,30 @@ xaudio2_object_write(struct audio_object *object,
 
 	HRESULT hr = S_OK;
 	if (SUCCEEDED(hr))
+#		ifndef HAVE_FAUDIO_H
 		hr = self->source->SubmitSourceBuffer(&buffer);
+#		else
+		hr = FAudioSourceVoice_SubmitSourceBuffer(self->source, &buffer,
+			nullptr);
+#		endif
 
 	if (SUCCEEDED(hr))
+#		ifndef HAVE_FAUDIO_H
 		hr = self->source->Start(0);
+#		else
+		hr = FAudioSourceVoice_Start(self->source, 0, WAVE_FORMAT_IEEE_FLOAT);
+#		endif
 
 	if (SUCCEEDED(hr)) while (true)
 	{
 		Sleep(10);
 
 		XAUDIO2_VOICE_STATE state = { 0 };
+#		ifndef HAVE_FAUDIO_H
 		self->source->GetState(&state);
+#		else
+		FAudioSourceVoice_GetState(self->source, &state, 0u);
+#		endif
 		if (state.pCurrentBufferContext == NULL && state.BuffersQueued == 0)
 			return hr;
 	}
@@ -160,10 +213,18 @@ create_xaudio2_object(const char *device,
 	CoInitialize(NULL);
 
 	IXAudio2 *audio = NULL;
+#	ifndef HAVE_FAUDIO_H
 	HRESULT hr = XAudio2Create(&audio, 0, XAUDIO2_DEFAULT_PROCESSOR);
+#	else
+	HRESULT hr = FAudioCreate(&audio, 0, FAUDIO_DEFAULT_PROCESSOR);
+#	endif
 	if (FAILED(hr) || audio == NULL) {
 		if (audio != NULL)
+#			ifndef HAVE_FAUDIO_H
 			audio->Release();
+#			else
+			FAudio_Release(audio);
+#			endif
 
 		CoUninitialize();
 		return NULL;
