@@ -234,9 +234,15 @@ file(
   [=[
 @PACKAGE_INIT@
 
+include(CMakeFindDependencyMacro)
+
 foreach(TARGET_TO_INCLUDE @INSTALLED_BUILDSYSTEM_TARGETS@)
   include("${CMAKE_CURRENT_LIST_DIR}/${TARGET_TO_INCLUDE}-target.cmake")
 endforeach()
+
+if(@pcaudiolib_WITH_FAUDIO@)
+  find_dependency(FAudio)
+endif()
 
 check_required_components(@INSTALLED_BUILDSYSTEM_TARGETS@)
 ]=]
