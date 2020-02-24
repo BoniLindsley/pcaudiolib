@@ -105,8 +105,17 @@ else()
   )
 endif()
 
-# The output library name is usually `libpcaudio.so`.
-set_target_properties(${TARGET_NAME} PROPERTIES OUTPUT_NAME "pcaudio")
+set_target_properties(
+  ${TARGET_NAME}
+  PROPERTIES
+
+    # The output library name is usually `libpcaudio.so`.
+    OUTPUT_NAME "pcaudio"
+
+    # Create a `.lib` file for the shared library in Windows
+    # to be installed along with the DLL.
+    WINDOWS_EXPORT_ALL_SYMBOLS TRUE
+)
 
 # Tell CMake that the library built should be installed when asked to.
 install(TARGETS ${TARGET_NAME} EXPORT ${TARGET_NAME})
