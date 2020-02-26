@@ -185,7 +185,7 @@ xaudio2_object_write(struct audio_object *object,
 #		ifndef HAVE_FAUDIO_H
 		hr = self->source->Start(0);
 #		else
-		hr = FAudioSourceVoice_Start(self->source, 0, WAVE_FORMAT_IEEE_FLOAT);
+		hr = FAudioSourceVoice_Start(self->source, 0, FAUDIO_COMMIT_NOW);
 #		endif
 
 	if (SUCCEEDED(hr)) while (true)
