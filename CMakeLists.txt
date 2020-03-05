@@ -164,6 +164,9 @@ install(
 
 if("${CMAKE_SYSTEM_NAME}" STREQUAL "Windows")
   if("${${PROJECT_NAME}_WITH_FAUDIO}")
+    # FAudio package does not propagate target dependency properly.
+    # So do it on its behalf before searching for FAudio.
+    find_package(SDL2 QUIET CONFIG)
     find_package(FAudio)
     target_link_libraries(${TARGET_NAME} FAudio::FAudio)
   else()
@@ -250,6 +253,9 @@ foreach(TARGET_TO_INCLUDE @INSTALLED_BUILDSYSTEM_TARGETS@)
 endforeach()
 
 if(@pcaudiolib_WITH_FAUDIO@)
+  # FAudio package does not propagate target dependency properly.
+  # So do it on its behalf before searching for FAudio.
+  find_dependency(SDL2)
   find_dependency(FAudio)
 endif()
 
