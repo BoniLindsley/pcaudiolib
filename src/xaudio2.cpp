@@ -39,7 +39,6 @@ typedef FAudioMasteringVoice IXAudio2MasteringVoice;
 typedef FAudioSourceVoice IXAudio2SourceVoice;
 typedef FAudioVoiceState XAUDIO2_VOICE_STATE;
 typedef FAudioBuffer XAUDIO2_BUFFER;
-#define WAVE_FORMAT_IEEE_FLOAT FAUDIO_FORMAT_IEEE_FLOAT
 
 #endif
 
